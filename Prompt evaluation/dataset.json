@@ -1,11 +1,14 @@
 [
   {
-    "task": "Write a Python function that parses an AWS S3 bucket URI (e.g., 's3://my-bucket/path/to/file.txt') and returns a dictionary with keys 'bucket' and 'key'."
+    "task": "Create a JSON configuration for an AWS S3 bucket policy that allows public read access to all objects",
+    "format": "json"
   },
   {
-    "task": "Create a JSON object that represents an AWS IAM policy allowing read-only access to a specific S3 bucket named 'my-data-bucket'."
+    "task": "Write a Python function that takes an AWS CloudWatch log message and extracts the timestamp, log level, and message content",
+    "format": "python"
   },
   {
-    "task": "Write a Regex pattern that validates AWS access key IDs, which always start with 'AKIA' and are 20 characters long, containing only uppercase letters and numbers."
+    "task": "Create a regex pattern that matches valid AWS IAM role ARNs (arn:aws:iam::account-id:role/role-name)",
+    "format": "regex"
   }
 ]
