@@ -43,7 +43,8 @@ def generate_dataset():
     [
         {
         "task": "Description of task",
-        "format": "json" or "python" or "regex"
+        "format": "json" or "python" or "regex",
+        "solution_criteria": "Criteria for evaluating the solution"
         },
         ...additional
     ]
@@ -127,6 +128,11 @@ Solution to Evaluate:
 <solution>
 {output}
 </solution>
+
+You should evaluate the solution based on the following criteria:
+<criteria>
+{test_case["solution_criteria"]}
+</criteria>
 
 Output Format
 Provide your evaluation as a structured JSON object with the following fields, in this specific order:

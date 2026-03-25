@@ -1,14 +1,17 @@
 [
   {
-    "task": "Create a JSON configuration for an AWS S3 bucket policy that allows public read access to all objects",
-    "format": "json"
+    "task": "Extract the AWS account ID from an ARN string like 'arn:aws:s3:::my-bucket/path/to/object'",
+    "format": "regex",
+    "solution_criteria": "Regex pattern must correctly extract the 12-digit account ID from various ARN formats, handling cases where account ID may be empty/omitted"
   },
   {
-    "task": "Write a Python function that takes an AWS CloudWatch log message and extracts the timestamp, log level, and message content",
-    "format": "python"
+    "task": "Create a Python function that accepts an AWS S3 bucket name and returns True if it follows AWS naming conventions (lowercase, 3-63 characters, no consecutive hyphens)",
+    "format": "python",
+    "solution_criteria": "Function must validate all AWS S3 bucket naming rules and return a boolean, handling edge cases like buckets starting/ending with hyphens"
   },
   {
-    "task": "Create a regex pattern that matches valid AWS IAM role ARNs (arn:aws:iam::account-id:role/role-name)",
-    "format": "regex"
+    "task": "Generate a JSON CloudFormation template snippet that defines an AWS Lambda execution IAM role with basic VPC execution permissions",
+    "format": "json",
+    "solution_criteria": "JSON must be valid CloudFormation syntax with proper AssumeRolePolicyDocument and managed policy ARN for Lambda VPC execution"
   }
 ]
