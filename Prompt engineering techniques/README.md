@@ -577,6 +577,122 @@ Shipping was fast but the packaging was a bit damaged.
 
 ---
 
+## 12. Handle Corner Cases with Examples
+
+When Claude gives a wrong or unexpected answer for a tricky input, don't just complain — show it the correct answer as an example. This teaches Claude exactly how to handle that edge case going forward.
+
+**When to use:**
+- The model handles most cases correctly but fails on one specific type of input
+- The task has ambiguous edge cases (empty input, null values, mixed formats, unusual phrasing)
+- You want the model to make a deliberate choice when the "right" answer isn't obvious
+- You're building a repeatable workflow and need consistent behavior on tricky inputs
+
+**When NOT to use:** If the model is consistently wrong on everything, the problem is the prompt structure, not the corner case. Fix the core prompt first.
+
+### What is a corner case?
+
+A corner case is an input that sits at the boundary of what your prompt expects — unusual, ambiguous, or edge inputs that the model may not handle the way you want.
+
+| Type | Example |
+|------|---------|
+| Empty input | An empty list, blank string, or missing field |
+| Ambiguous input | A sentence that could be positive or negative |
+| Mixed format | A date written as "March 5" instead of "2026-03-05" |
+| Unexpected value | A negative number where only positive was expected |
+| Conflicting signals | "Great product, but arrived broken" — positive or negative? |
+
+### Step-by-step: Teaching Claude to handle a corner case
+
+**Scenario:** You're classifying customer reviews as Positive, Negative, or Neutral. But reviews with mixed signals (good + bad) keep getting classified as Positive, which is wrong for your use case.
+
+**Step 1 — Identify the corner case:**
+```
+"Great product, but it arrived broken." → Claude says: Positive ← WRONG
+```
+
+**Step 2 — Decide what the correct answer should be:**
+For your use case, any mention of a problem = Negative.
+
+**Step 3 — Add it as a labeled corner case example in your prompt:**
+
+```xml
+<instructions>
+Classify the sentiment of each review as Positive, Negative, or Neutral.
+If a review contains any complaint or problem, classify it as Negative — even if it also contains praise.
+</instructions>
+
+<examples>
+  <example>
+    <input>I love this product, works perfectly!</input>
+    <output>Positive</output>
+  </example>
+  <example>
+    <input>Terrible quality, broke after one day.</input>
+    <output>Negative</output>
+  </example>
+  <example type="corner_case">
+    <input>Great product, but it arrived broken.</input>
+    <output>Negative</output>
+    <reason>Contains a complaint (arrived broken), so classified as Negative despite the praise.</reason>
+  </example>
+  <example type="corner_case">
+    <input>I've only had it for a day so I can't say much yet.</input>
+    <output>Neutral</output>
+    <reason>No clear positive or negative signal — too early to judge.</reason>
+  </example>
+</examples>
+
+<review>
+Amazing design, but the battery life is disappointing.
+</review>
+```
+
+By including the corner case with a `<reason>` tag, you're telling Claude *why* that answer is correct — not just what the answer is. This helps it generalize to similar cases.
+
+### Common corner cases to plan for:
+
+**For text classification tasks:**
+- Sarcasm: "Oh great, another update that breaks everything."
+- Mixed sentiment: positive tone + negative content
+- No signal: "I received the package." (neutral, no opinion)
+
+**For code generation tasks:**
+- Empty input: What should the function return if the list is empty?
+- Zero/negative values: What if the number is 0 or negative?
+- Wrong type: What if a string is passed instead of a number?
+
+**For data extraction tasks:**
+- Missing field: What if the field doesn't exist in the input?
+- Multiple matches: What if there are two dates in the text?
+- Ambiguous format: "01/02/03" — which is the year?
+
+### The corner case prompt template:
+
+```xml
+<instructions>
+[Your main instruction]
+Special rules for edge cases:
+- If [corner case A], then [do this]
+- If [corner case B], then [do that]
+</instructions>
+
+<examples>
+  <example>
+    <input>[Normal input]</input>
+    <output>[Normal output]</output>
+  </example>
+  <example type="corner_case">
+    <input>[The tricky input]</input>
+    <output>[The correct output]</output>
+    <reason>[Why this is the right answer]</reason>
+  </example>
+</examples>
+
+<input>[Your actual input]</input>
+```
+
+---
+
 ## Putting It All Together — Full Example
 
 **Task:** You want Claude to help you review your Python code.
@@ -628,3 +744,4 @@ Before sending a prompt, ask yourself:
 - [ ] Did I set constraints to avoid a bloated response?
 - [ ] Should I ask for multiple alternatives?
 - [ ] Is my prompt complex enough to benefit from XML tags to separate sections?
+- [ ] Are there corner cases the model might get wrong? Should I add an example showing the correct answer?
