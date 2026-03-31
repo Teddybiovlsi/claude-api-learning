@@ -8,6 +8,8 @@ A personal reference guide for writing better prompts.
 
 Tell the model exactly what you want. Avoid vague or ambiguous language.
 
+**When to use:** Always — this is the foundation of every prompt. Apply this before anything else.
+
 | Bad | Good |
 |-----|------|
 | "Tell me about Python" | "Explain what a Python list comprehension is, with 2 short examples" |
@@ -40,6 +42,14 @@ Format it as a table.
 ## 2. Use a Role / Persona
 
 Give Claude a role so it adopts the right tone and expertise level.
+
+**When to use:**
+- You want the response at a specific expertise level (beginner-friendly vs. expert-level)
+- You need a specific professional tone (engineer, teacher, lawyer, designer)
+- The default response feels too generic or surface-level
+- You want it to match your own skill level (e.g. "I'm a beginner")
+
+**When NOT to use:** For simple factual questions where tone doesn't matter (e.g. "What year was Python created?")
 
 **Why it works:** The model adjusts its vocabulary, depth, and assumptions based on the role you give it.
 
@@ -83,6 +93,14 @@ Explain what CORS is and why browsers enforce it. Use a simple analogy.
 
 Provide background so the model understands *why* you're asking.
 
+**When to use:**
+- The question is specific to your situation (not a general knowledge question)
+- You have constraints the model needs to know (tech stack, language, framework)
+- You've already tried something and it didn't work — say what you tried
+- You're a beginner and want a simpler explanation
+
+**When NOT to use:** Skip the background if it's a quick, universal question (e.g. "What does `===` mean in JavaScript?")
+
 **Rule:** Answer these 3 questions inside your prompt:
 - Who am I?
 - What do I already know?
@@ -122,6 +140,15 @@ Each step makes the response more tailored and useful.
 
 Tell the model *how* to respond — list, JSON, markdown, table, plain text, code only, etc.
 
+**When to use:**
+- You're going to copy/paste the output somewhere (code editor, document, spreadsheet)
+- You need to scan or compare information quickly (use a table or list)
+- You're building something that parses the response (use JSON)
+- The default response is longer or more verbose than what you need
+- You want code only, without explanation (or explanation only, without code)
+
+**When NOT to use:** If you just want a conversational answer and format doesn't matter, skip it.
+
 **Rule:** If format matters to you, always state it explicitly.
 
 ### Common formats and when to use them:
@@ -158,6 +185,14 @@ Include rows for: data structure, scalability, use case, example database.
 ## 5. Few-Shot Prompting (Give Examples)
 
 Show the model examples of the input → output pattern you want before asking your question.
+
+**When to use:**
+- You want the output to follow a very specific format or style that's hard to describe in words
+- You're doing repetitive transformations (rewriting, classifying, extracting)
+- The model keeps getting the format slightly wrong even after instructions
+- You want consistent results across many inputs
+
+**When NOT to use:** For one-off questions or when the task is simple enough that an instruction alone works fine. Examples add length — don't use them if they're not needed.
 
 **Why it works:** Examples are stronger than instructions — they show the model the exact pattern to follow.
 
@@ -209,6 +244,15 @@ Formal: ?
 
 Ask the model to think step by step before giving a final answer. Dramatically improves reasoning, math, and debugging.
 
+**When to use:**
+- Math or calculation problems (the answer depends on intermediate steps)
+- Debugging — you want to understand *why* something is wrong, not just the fix
+- Logic or reasoning tasks (e.g. "which option is better and why?")
+- Planning tasks where order matters
+- When the first answer felt wrong — CoT forces the model to slow down and check itself
+
+**When NOT to use:** For simple factual lookups or short answers where reasoning is not needed (e.g. "What is the capital of France?"). CoT adds length — only use it when depth matters.
+
 **Rule:** Use CoT whenever the task involves logic, math, debugging, or multi-step reasoning.
 
 ### Two ways to trigger CoT:
@@ -251,6 +295,15 @@ function getUser(id) {
 ## 7. Break Complex Tasks into Steps
 
 Don't ask for everything at once. Split large tasks into smaller sub-tasks across multiple messages.
+
+**When to use:**
+- Your task has multiple moving parts (schema + API + frontend)
+- Each step depends on the output of the previous one
+- The response quality drops when you ask for too much at once
+- You want to review and approve each part before continuing
+- You're building something large and need to stay in control
+
+**When NOT to use:** If the task is small and self-contained — splitting it unnecessarily adds friction.
 
 **Rule:** One task per prompt. If your prompt has "and" in it, consider splitting it.
 
@@ -297,6 +350,15 @@ Write a React login form component that:
 
 Limit the scope, length, or style to get a focused and useful response.
 
+**When to use:**
+- The response keeps being too long or covering things you don't need
+- You have technical restrictions (no libraries, specific language version, character limit)
+- You want to force a specific approach (e.g. "use recursion" or "do NOT use recursion")
+- You're writing for a specific audience and need the right tone/complexity level
+- You want to exclude things you already know so the response focuses on what's new
+
+**When NOT to use:** Don't over-constrain. If you add too many restrictions, the model may struggle to give a useful answer. Use only the constraints that actually matter.
+
 **Rule:** Constraints reduce noise and keep responses on target.
 
 ### Types of constraints you can set:
@@ -331,6 +393,14 @@ Show the CSS code only, no explanation.
 
 Request multiple options so you can evaluate and choose the best one.
 
+**When to use:**
+- You're making a decision and want to compare options (naming, architecture, wording)
+- You're not sure what the best approach is and want to see tradeoffs
+- The first answer felt too narrow or opinionated
+- You're brainstorming and want to explore possibilities before committing
+
+**When NOT to use:** When there's clearly one right answer (e.g. "What is the syntax for a for loop in Python?"). Asking for alternatives there just adds noise.
+
 **Why it works:** Forces the model to explore the solution space instead of defaulting to the first idea.
 
 ### Step-by-step: Getting useful alternatives
@@ -359,6 +429,15 @@ Now you can make an informed choice instead of guessing.
 ## 10. Iterate and Refine
 
 Prompting is a conversation. The first response is a draft — refine it with follow-ups.
+
+**When to use:**
+- The response was close but not quite right — don't rewrite the whole prompt, just correct the specific issue
+- You want to go deeper on one part of a long response
+- The tone, length, or focus was off
+- You want to build on the response (e.g. "Now apply that to my actual code")
+- You got a good answer and want to push it further
+
+**When NOT to use:** If the response was completely off-base, it's sometimes faster to start fresh with a better prompt than to patch a bad response.
 
 **Rule:** You don't need the perfect prompt on the first try. Iterate toward what you want.
 
@@ -397,32 +476,142 @@ Each round gets more useful. This is more effective than writing one huge prompt
 
 ---
 
+## 11. Use XML Tags to Structure Your Prompt
+
+Wrap different parts of your prompt in XML tags to clearly separate instructions, context, code, and examples. Claude is trained to read XML tags and treats each section as distinct — this reduces confusion in complex prompts.
+
+**When to use:**
+- Your prompt has multiple distinct sections (instructions + code + examples)
+- You're passing in long content like a document, codebase, or conversation history
+- The model keeps mixing up what to do vs. what to read
+- You want the model to only act on one part of the input and treat the rest as reference
+- Your prompt is long enough that structure becomes important for clarity
+
+**When NOT to use:** Short, single-purpose prompts don't need tags. "Explain recursion in 3 bullet points" is already clear without structure.
+
+### Common XML tags and what they're for:
+
+| Tag | Purpose |
+|-----|---------|
+| `<instructions>` | What you want the model to do |
+| `<context>` | Background information for the model to know |
+| `<code>` | Code you want analyzed, debugged, or reviewed |
+| `<example>` | A sample input/output to show the pattern |
+| `<document>` | A long piece of text to summarize or reference |
+| `<output_format>` | How you want the response structured |
+| `<question>` | The specific question to answer |
+
+### Step-by-step: Converting a messy prompt to XML-structured
+
+**Messy prompt (hard to parse):**
+```
+You are a senior Python engineer. I have this function that calculates average
+but it crashes on empty lists. Here's the code: def get_average(numbers): return
+sum(numbers) / len(numbers). Give me the fixed version and explain the edge cases.
+Format the answer with the code first, then the explanation.
+```
+
+**Step 1 — Identify the sections:**
+- Role → senior Python engineer
+- Context → crashes on empty lists
+- Code → the function
+- Task → fix it and explain edge cases
+- Format → code first, then explanation
+
+**Step 2 — Wrap each section in a tag:**
+
+```xml
+<role>You are a senior Python engineer.</role>
+
+<context>
+I have a function that calculates the average of a list.
+It crashes when the input list is empty.
+</context>
+
+<code>
+def get_average(numbers):
+    return sum(numbers) / len(numbers)
+</code>
+
+<instructions>
+1. Fix the function to handle the empty list edge case.
+2. Explain what other edge cases could still break it.
+</instructions>
+
+<output_format>
+Show the fixed code first, then the explanation as a numbered list.
+</output_format>
+```
+
+The model now knows exactly what each part is for and will not confuse the code with the instructions.
+
+### Nested tags — for passing examples inside a prompt:
+
+```xml
+<instructions>
+Classify the sentiment of each review as Positive, Negative, or Neutral.
+</instructions>
+
+<examples>
+  <example>
+    <input>The product works great, I love it!</input>
+    <output>Positive</output>
+  </example>
+  <example>
+    <input>It broke after two days, very disappointed.</input>
+    <output>Negative</output>
+  </example>
+</examples>
+
+<review>
+Shipping was fast but the packaging was a bit damaged.
+</review>
+```
+
+### Key rules for XML tags:
+
+1. **Tag names are up to you** — use names that describe the content clearly
+2. **Consistency matters** — use the same tag names throughout a project
+3. **Claude will reference tag names in its response** — this helps you trace which part it's reacting to
+4. **Combine with other techniques** — XML tags work especially well with Few-Shot (#5) and CoT (#6)
+
+---
+
 ## Putting It All Together — Full Example
 
 **Task:** You want Claude to help you review your Python code.
 
-**Combining techniques 1, 2, 3, 4, 8:**
+**Combining techniques 1, 2, 3, 4, 8, 11 (XML tags):**
 
-```
-You are a senior Python engineer doing a code review. (Role)
-I am a junior developer, 3 months into learning Python. (Context)
+```xml
+<role>
+You are a senior Python engineer doing a code review.
+I am a junior developer, 3 months into learning Python.
+</role>
 
-Review the following function for: (Clear + Scoped)
+<instructions>
+Review the following function for:
 1. Correctness — does it do what it claims?
 2. Edge cases — what inputs could break it?
 3. Style — does it follow Python best practices?
 
-Do NOT rewrite the function yet, just list the issues. (Constraint)
-Format your response as a numbered list. (Output Format)
+Do NOT rewrite the function yet, just list the issues.
+</instructions>
 
+<code>
 def get_average(numbers):
     total = 0
     for n in numbers:
         total += n
     return total / len(numbers)
+</code>
+
+<output_format>
+Respond as a numbered list. One issue per item.
+</output_format>
 ```
 
-This prompt combines 5 techniques at once and will produce a focused, useful code review.
+This prompt combines 6 techniques at once. The XML tags make each section unambiguous — the model knows exactly what to do, what to read, and how to respond.
 
 ---
 
@@ -438,3 +627,4 @@ Before sending a prompt, ask yourself:
 - [ ] Should I ask it to think step by step? (CoT)
 - [ ] Did I set constraints to avoid a bloated response?
 - [ ] Should I ask for multiple alternatives?
+- [ ] Is my prompt complex enough to benefit from XML tags to separate sections?
