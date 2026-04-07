@@ -1,15 +1,29 @@
 from datetime import datetime, timedelta
-from anthropic.types import ToolParam
+from anthropic.types import ToolParam, Message
+
+import json
 
 
 # ── Message helpers ──────────────────────────────────────────────────────────
 
-def add_user_message(messages: list, text: str) -> None:
-    messages.append({"role": "user", "content": text})
+def add_user_message(messages: list, message) -> None:
+    user_message = {
+        "role": "user",
+        "content": message.content if isinstance(message, Message) else message,
+    }
+    messages.append(user_message)
 
 
-def add_assistant_message(messages: list, text: str) -> None:
-    messages.append({"role": "assistant", "content": text})
+def add_assistant_message(messages: list, message) -> None:
+    assistant_message = {
+        "role": "assistant",
+        "content": message.content if isinstance(message, Message) else message,
+    }
+    messages.append(assistant_message)
+
+
+def text_from_message(message) -> str:
+    return "\n".join([block.text for block in message.content if block.type == "text"])
 
 
 def chat(
@@ -19,24 +33,30 @@ def chat(
     system: str | None = None,
     temperature: float = 1.0,
     stop_sequences: list = [],
-    tools: list = [],
-) -> str:
+    tools: list | None = None,
+):
     params = {
         "model": model,
         "max_tokens": 1000,
         "messages": messages,
         "temperature": temperature,
         "stop_sequences": stop_sequences,
-        "tools": tools,
     }
+    if tools:
+        params["tools"] = tools
     if system:
         params["system"] = system
 
-    message = client.messages.create(**params)
-    return message.content[0].text
+    return client.messages.create(**params)
 
 
 # ── Tool implementations ─────────────────────────────────────────────────────
+
+def get_current_datetime(date_format: str = "%Y-%m-%d %H:%M:%S") -> str:
+    if not date_format:
+        raise ValueError("date_format must not be empty")
+    return datetime.now().strftime(date_format)
+
 
 def add_duration_to_datetime(
     datetime_str: str,
@@ -57,7 +77,7 @@ def add_duration_to_datetime(
     elif unit == "weeks":
         new_date = date + timedelta(weeks=duration)
     elif unit == "months":
-        month = date.month + duration
+        month = date.month + int(duration)
         year = date.year + month // 12
         month = month % 12
         if month == 0:
@@ -73,7 +93,7 @@ def add_duration_to_datetime(
         )
         new_date = date.replace(year=year, month=month, day=day)
     elif unit == "years":
-        new_date = date.replace(year=date.year + duration)
+        new_date = date.replace(year=date.year + int(duration))
     else:
         raise ValueError(f"Unsupported time unit: {unit}")
 
@@ -84,31 +104,85 @@ def set_reminder(content: str, timestamp: str) -> None:
     print(f"----\nSetting the following reminder for {timestamp}:\n{content}\n----")
 
 
-# ── Build the first tool function
+# ── Tool runner ──────────────────────────────────────────────────────────────
 
-def get_current_datetime(date_format: str = "%Y-%m-%d %H:%M:%S") -> str:
-    if not date_format:
-        raise ValueError("date_format must not be empty")
-    return datetime.now().strftime(date_format)
+def run_tool(tool_name: str, tool_input: dict):
+    if tool_name == "get_current_datetime":
+        return get_current_datetime(**tool_input)
+    elif tool_name == "add_duration_to_datetime":
+        return add_duration_to_datetime(**tool_input)
+    elif tool_name == "set_reminder":
+        return set_reminder(**tool_input)
+    else:
+        raise ValueError(f"Unknown tool: {tool_name}")
 
 
-get_current_datetime_schema = ToolParam({
-  "name": "get_current_datetime",
-  "description": "Returns the current date and time formatted according to the specified format string. Use this tool whenever the user asks about the current time, date, or needs a timestamp. Do not guess or fabricate the current date — always call this tool.",
-  "input_schema": {
-    "type": "object",
-    "properties": {
-      "date_format": {
-        "type": "string",
-        "description": "A Python strftime-compatible format string that controls the output format. Defaults to '%Y-%m-%d %H:%M:%S' (e.g., '2025-04-01 14:30:00'). Common examples: '%Y-%m-%d' for date only, '%H:%M:%S' for time only, '%A, %B %d %Y' for human-readable. Must not be empty.",
-        "default": "%Y-%m-%d %H:%M:%S"
-      }
-    },
-    "required": []
-  }
-})
+def run_tools(message) -> list:
+    tool_requests = [block for block in message.content if block.type == "tool_use"]
+    tool_result_blocks = []
+
+    for tool_request in tool_requests:
+        try:
+            tool_output = run_tool(tool_request.name, tool_request.input)
+            tool_result_block = {
+                "type": "tool_result",
+                "tool_use_id": tool_request.id,
+                "content": json.dumps(tool_output),
+                "is_error": False,
+            }
+        except Exception as e:
+            tool_result_block = {
+                "type": "tool_result",
+                "tool_use_id": tool_request.id,
+                "content": f"Error: {e}",
+                "is_error": True,
+            }
+        tool_result_blocks.append(tool_result_block)
+
+    return tool_result_blocks
+
+
+def run_conversation(client, model: str, messages: list, tools: list) -> list:
+    while True:
+        response = chat(client, model, messages, tools=tools)
+        add_assistant_message(messages, response)
+        print(text_from_message(response))
+
+        if response.stop_reason != "tool_use":
+            break
+
+        tool_results = run_tools(response)
+        add_user_message(messages, tool_results)
+
+    return messages
+
 
 # ── Tool schemas ─────────────────────────────────────────────────────────────
+
+get_current_datetime_schema = ToolParam({
+    "name": "get_current_datetime",
+    "description": (
+        "Returns the current date and time formatted according to the specified format string. "
+        "Use this tool whenever the user asks about the current time, date, or needs a timestamp. "
+        "Do not guess or fabricate the current date — always call this tool."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "date_format": {
+                "type": "string",
+                "description": (
+                    "A Python strftime-compatible format string that controls the output format. "
+                    "Defaults to '%Y-%m-%d %H:%M:%S' (e.g., '2025-04-01 14:30:00'). "
+                    "Common examples: '%Y-%m-%d' for date only, '%H:%M:%S' for time only, "
+                    "'%A, %B %d %Y' for human-readable. Must not be empty."
+                ),
+                "default": "%Y-%m-%d %H:%M:%S",
+            }
+        },
+        "required": [],
+    },
+})
 
 add_duration_to_datetime_schema = {
     "name": "add_duration_to_datetime",
