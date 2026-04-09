@@ -1,6 +1,12 @@
 import re
+from dotenv import load_dotenv
+import voyageai
 
-# Chunk by a set number of charactesr
+load_dotenv()
+
+client = voyageai.Client()
+
+# Chunk by a set number of characters
 def chunk_by_char(text, chunk_size=150, chunk_overlap=20):
     chunks = []
     start_idx = 0
@@ -41,3 +47,9 @@ def chunk_by_sentence(text, max_sentences_per_chunk=5, overlap_sentences=1):
 def chunk_by_section(document_text):
     pattern = r"\n## "
     return re.split(pattern, document_text)
+
+# Embedding Generation
+def generate_embedding(text, model="voyage-3-large", input_type="query"):
+    result = client.embed([text], model=model, input_type=input_type)
+
+    return result.embeddings[0]
